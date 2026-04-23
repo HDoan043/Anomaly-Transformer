@@ -207,8 +207,8 @@ class Custom(object):
         data = pd.read_csv(data_path)
     
         # Train test split
-        train_size = int(train_ratio)*len(data)
-        test_size = int(test_ratio)*len(data)
+        train_size = int(train_ratio*len(data))
+        test_size = int(test_ratio*len(data))
         data_with_label = data.loc[:train_size, :].copy()
         val_data_with_label = data.loc[train_size: len(data) - test_size - 1, :].copy()
         test_data_with_label = data.loc[len(data) - test_size-1:, :].copy()
