@@ -196,7 +196,8 @@ class Solver(object):
                     {
                         "Epoch": epoch + 1,
                         "Iteration": f"{i+1}/{train_steps}",
-                        "Loss": loss.item(),
+                        "Series loss": loss1.item(),
+                        "Prior loss": loss2.item(),
                         "Speed": f"{round(speed, 4)}s/iter",
                         "Left time": left_time
                     }
