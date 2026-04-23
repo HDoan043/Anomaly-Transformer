@@ -205,9 +205,14 @@ class Solver(object):
             adjust_learning_rate(self.optimizer, epoch + 1, self.lr)
 
     def test(self):
-        self.model.load_state_dict(
-            torch.load(
-                os.path.join(str(self.model_save_path), str(self.dataset) + '_checkpoint.pth')))
+        try:
+            self.model.load_state_dict(
+                torch.load(
+                    os.path.join(str(self.model_save_path), str(self.dataset) + '_checkpoint.pth')))
+        except:
+            self.model.load_state_dict(
+                torch.load(
+                    os.path.join(str(self.model_save_path), '_checkpoint.pth')))            
         self.model.eval()
         temperature = 50
 
