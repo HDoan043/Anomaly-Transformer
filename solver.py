@@ -149,7 +149,7 @@ class Solver(object):
 
             epoch_time = time.time()
             self.model.train()
-            pbar = ProgressBar(train_loader, bin=60)
+            pbar = ProgressBar(self.train_loader, bin=60)
             for i, (input_data, labels) in enumerate(pbar):
                 aggregate_steps += 1
                 self.optimizer.zero_grad()
