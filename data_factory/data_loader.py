@@ -198,8 +198,72 @@ class SMDSegLoader(object):
                               index // self.step * self.win_size:index // self.step * self.win_size + self.win_size]), np.float32(
                 self.test_labels[index // self.step * self.win_size:index // self.step * self.win_size + self.win_size])
 
+class Custom(object):
+    def __init__(self, data_path, train_ratio, test_ratio, win_size, step, mode="train"):
+        self.mode = mode
+        self.step = step
+        self.win_size = win_size
+        self.scaler = StandardScaler()
+        data = pd.read_csv(data_path)
+    
+        # Train test split
+        train_size = int(train_ratio)*len(data)
+        test_size = int(test_ratio)*len(data)
+        test_data_with_label = data.loc[len(data) - test_size-1:, :].copy()
+        data_with_label = data.loc[:train_size, :].copy()
 
-def get_loader_segment(data_path, batch_size, win_size=100, step=100, mode='train', dataset='KDD'):
+        # remove label of data
+        cols = list(data.columns)
+        feature_cols = [col for col in cols if col not in ["Unnamed: 0", "label", "date"]]
+        data = data_with_label.loc[:, feature_cols].copy().values
+        data = np.nan_to_num(data)
+        test_data = test_data_with_label.loc[:, feature_cols].copy().values
+        test_labels = test_data_with_label["label"].values
+
+        # normalization
+        self.scaler.fit(data)
+        data = self.scaler.transform(data)
+    
+        test_data = np.nan_to_num(test_data)
+        self.test = self.scaler.transform(test_data)
+
+        self.train = data
+        self.val = self.test
+
+        self.test_labels = test_labels
+
+        print("test:", self.test.shape)
+        print("train:", self.train.shape)
+
+    def __len__(self):
+        """
+        Number of images in the object dataset.
+        """
+        if self.mode == "train":
+            return (self.train.shape[0] - self.win_size) // self.step + 1
+        elif (self.mode == 'val'):
+            return (self.val.shape[0] - self.win_size) // self.step + 1
+        elif (self.mode == 'test'):
+            return (self.test.shape[0] - self.win_size) // self.step + 1
+        else:
+            return (self.test.shape[0] - self.win_size) // self.win_size + 1
+
+    def __getitem__(self, index):
+        index = index * self.step
+        if self.mode == "train":
+            return np.float32(self.train[index:index + self.win_size]), np.float32(self.test_labels[0:self.win_size])
+        elif (self.mode == 'val'):
+            return np.float32(self.val[index:index + self.win_size]), np.float32(self.test_labels[0:self.win_size])
+        elif (self.mode == 'test'):
+            return np.float32(self.test[index:index + self.win_size]), np.float32(
+                self.test_labels[index:index + self.win_size])
+        else:
+            return np.float32(self.test[
+                              index // self.step * self.win_size:index // self.step * self.win_size + self.win_size]), np.float32(
+                self.test_labels[index // self.step * self.win_size:index // self.step * self.win_size + self.win_size])
+
+
+def get_loader_segment(data_path, batch_size, win_size=100, step=100, mode='train', dataset='KDD', train_ratio=0.7, test_ratio=0.2):
     if (dataset == 'SMD'):
         dataset = SMDSegLoader(data_path, win_size, step, mode)
     elif (dataset == 'MSL'):
@@ -208,7 +272,8 @@ def get_loader_segment(data_path, batch_size, win_size=100, step=100, mode='trai
         dataset = SMAPSegLoader(data_path, win_size, 1, mode)
     elif (dataset == 'PSM'):
         dataset = PSMSegLoader(data_path, win_size, 1, mode)
-
+    else:
+        dataset = Custome(data_path, train_ratio, test_ratio, win_size, 1, mode)
     shuffle = False
     if mode == 'train':
         shuffle = True
