@@ -84,7 +84,8 @@ class Solver(object):
                                               dataset=self.dataset, train_ratio=self.train_ratio, test_ratio=self.test_ratio)
 
         self.build_model()
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        
         self.criterion = nn.MSELoss()
 
     def build_model(self):
@@ -93,6 +94,8 @@ class Solver(object):
 
         if torch.cuda.is_available():
             self.model.cuda()
+            if torch.cuda.device_count() > 1:
+                self.model = nn.DataParallel(self.model) 
 
     def vali(self, vali_loader):
         self.model.eval()
