@@ -318,7 +318,7 @@ class Solver(object):
         test_energy = np.array(attens_energy)
         combined_energy = np.concatenate([train_energy, test_energy], axis=0)
         thresh = np.percentile(combined_energy, 100 - self.anormly_ratio)
-        if self.threshold != -1:
+        if self.threshold == -1:
             print("Using calculated threshold :", thresh)
         else:
             thresh = self.threshold
