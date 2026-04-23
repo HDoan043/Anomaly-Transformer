@@ -54,6 +54,7 @@ if __name__ == '__main__':
     parser.add_argument('--threshold', type=float, default=-1)
     parser.add_argument('--train_ratio', type=float, default=0.7)
     parser.add_argument('--test_ratio', type=float, default=0.2)
+    parser.add_argument('--temperature', type=float, default=50)
 
     config = parser.parse_args()
 
