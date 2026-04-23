@@ -272,8 +272,8 @@ def get_loader_segment(data_path, batch_size, win_size=100, step=100, mode='trai
         dataset = SMAPSegLoader(data_path, win_size, 1, mode)
     elif (dataset == 'PSM'):
         dataset = PSMSegLoader(data_path, win_size, 1, mode)
-    else:
-        dataset = Custome(data_path, train_ratio, test_ratio, win_size, 1, mode)
+    elif dataset == "custom":
+        dataset = Custom(data_path, train_ratio, test_ratio, win_size, 1, mode)
     shuffle = False
     if mode == 'train':
         shuffle = True
