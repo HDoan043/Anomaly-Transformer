@@ -209,9 +209,10 @@ class Custom(object):
         # Train test split
         train_size = int(train_ratio)*len(data)
         test_size = int(test_ratio)*len(data)
-        test_data_with_label = data.loc[len(data) - test_size-1:, :].copy()
         data_with_label = data.loc[:train_size, :].copy()
-
+        val_data_with_label = data.loc[train_size: len(data) - test_size - 1, :].copy()
+        test_data_with_label = data.loc[len(data) - test_size-1:, :].copy()
+        
         # remove label of data
         cols = list(data.columns)
         feature_cols = [col for col in cols if col not in ["Unnamed: 0", "label", "date"]]
@@ -219,7 +220,8 @@ class Custom(object):
         data = np.nan_to_num(data)
         test_data = test_data_with_label.loc[:, feature_cols].copy().values
         test_labels = test_data_with_label["label"].values
-
+        val_data = val_data_with_label.loc[:, feature_cols].copy().values
+        
         # normalization
         self.scaler.fit(data)
         data = self.scaler.transform(data)
@@ -228,7 +230,8 @@ class Custom(object):
         self.test = self.scaler.transform(test_data)
 
         self.train = data
-        self.val = self.test
+        val_data = np.nan_to_num(val_data)
+        self.val = self.scaler.transform(val_data)
 
         self.test_labels = test_labels
 
