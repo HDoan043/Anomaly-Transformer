@@ -18,8 +18,18 @@ def main(config):
     solver = Solver(vars(config))
 
     if config.mode == 'train':
+        print("="*80)
+        print(" TRAINING ")
+        print("-"*50)
         solver.train()
+        print("="*80)
+        print(" TESING ")
+        print("-"*50)
+        solver.test()
     elif config.mode == 'test':
+        print("="*80)
+        print(" TESING ")
+        print("-"*50)
         solver.test()
 
     return solver
