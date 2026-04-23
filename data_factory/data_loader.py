@@ -205,13 +205,19 @@ class Custom(object):
         self.win_size = win_size
         self.scaler = StandardScaler()
         data = pd.read_csv(data_path)
+        print("full data shape:", data.shape)
     
         # Train test split
         train_size = int(train_ratio*len(data))
         test_size = int(test_ratio*len(data))
+        print("train size", train_size)
+        print("test size", test_size)
         data_with_label = data.loc[:train_size, :].copy()
         val_data_with_label = data.loc[train_size: len(data) - test_size - 1, :].copy()
         test_data_with_label = data.loc[len(data) - test_size-1:, :].copy()
+        print("train shape:", data_with_label.shape)
+        print("val shape: ", val_data_with_label.shape)
+        print("test shape: ", test_data_with_label.shape)
         
         # remove label of data
         cols = list(data.columns)
