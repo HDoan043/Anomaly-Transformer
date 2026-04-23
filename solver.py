@@ -316,10 +316,26 @@ class Solver(object):
 
         attens_energy = np.concatenate(attens_energy, axis=0).reshape(-1)
         test_energy = np.array(attens_energy)
+        # combined_energy = np.concatenate([train_energy, test_energy], axis=0)
+        # print("normal:", np.percentile(train_energy, [0,25,50,75,95,99]))
+        # print("test:", np.percentile(test_energy, [0,25,50,75,95,99]))
+        # print("normal and test:", np.percentile(combined_energy, [0,25,50,75,95,99]))
+        # thresh = np.percentile(combined_energy, 100 - self.anormly_ratio)
         combined_energy = np.concatenate([train_energy, test_energy], axis=0)
+        
+        # ===== NORMALIZE (QUAN TRỌNG) =====
+        min_val = np.min(combined_energy)
+        max_val = np.max(combined_energy)
+        combined_energy = (combined_energy - min_val) / (max_val - min_val + 1e-8)
+        
+        # apply same scale
+        train_energy = (train_energy - min_val) / (max_val - min_val + 1e-8)
+        test_energy = (test_energy - min_val) / (max_val - min_val + 1e-8)
+        
         print("normal:", np.percentile(train_energy, [0,25,50,75,95,99]))
         print("test:", np.percentile(test_energy, [0,25,50,75,95,99]))
         print("normal and test:", np.percentile(combined_energy, [0,25,50,75,95,99]))
+        
         thresh = np.percentile(combined_energy, 100 - self.anormly_ratio)
         if self.threshold == -1:
             print("Using calculated threshold :", thresh)
@@ -367,7 +383,9 @@ class Solver(object):
         test_energy = np.array(attens_energy)
         test_labels = np.array(test_labels)
 
+        test_energy = (test_energy - min_val) / (max_val - min_val + 1e-8)
         pred = (test_energy > thresh).astype(int)
+        # pred = (test_energy > thresh).astype(int)
 
         gt = test_labels.astype(int)
 
