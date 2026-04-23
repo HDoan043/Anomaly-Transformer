@@ -42,6 +42,8 @@ if __name__ == '__main__':
     parser.add_argument('--model_save_path', type=str, default='checkpoints')
     parser.add_argument('--anormly_ratio', type=float, default=4.00)
     parser.add_argument('--threshold', type=float, default=-1)
+    parser.add_argument('--train_ratio', type=float, default=0.7)
+    parser.add_argument('--test_ratio', type=float, default=0.2)
 
     config = parser.parse_args()
 
