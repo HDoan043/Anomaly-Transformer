@@ -185,7 +185,7 @@ class Solver(object):
                 loss2 = rec_loss + self.k * prior_loss
 
                 speed = (time.time() - time_begin) / aggregate_steps
-                left_time_s = speed * ((self.args.train_epochs - epoch) * train_steps - i)
+                left_time_s = speed * ((self.num_epochs - epoch) * train_steps - i)
                 if left_time_s <60: 
                     left_time = f"{round(left_time_s,4)}s"
                 elif left_time_s<3600:
