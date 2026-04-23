@@ -7,6 +7,7 @@ import time
 from utils.utils import *
 from model.AnomalyTransformer import AnomalyTransformer
 from data_factory.data_loader import get_loader_segment
+import time
 
 
 def my_kl_loss(p, q):
@@ -137,6 +138,10 @@ class Solver(object):
             os.makedirs(path)
         early_stopping = EarlyStopping(patience=3, verbose=True, dataset_name=self.dataset)
         train_steps = len(self.train_loader)
+        
+        time_now = time.time()
+        time_begin= time.time()
+        aggregate_steps = 0
 
         for epoch in range(self.num_epochs):
             iter_count = 0
@@ -144,8 +149,9 @@ class Solver(object):
 
             epoch_time = time.time()
             self.model.train()
-            for i, (input_data, labels) in enumerate(self.train_loader):
-
+            pbar = ProgressBar(train_loader, bin=60)
+            for i, (input_data, labels) in enumerate(pbar):
+                aggregate_steps += 1
                 self.optimizer.zero_grad()
                 iter_count += 1
                 input = input_data.float().to(self.device)
@@ -178,12 +184,29 @@ class Solver(object):
                 loss1 = rec_loss - self.k * series_loss
                 loss2 = rec_loss + self.k * prior_loss
 
-                if (i + 1) % 100 == 0:
-                    speed = (time.time() - time_now) / iter_count
-                    left_time = speed * ((self.num_epochs - epoch) * train_steps - i)
-                    print('\tspeed: {:.4f}s/iter; left time: {:.4f}s'.format(speed, left_time))
-                    iter_count = 0
-                    time_now = time.time()
+                speed = (time.time() - time_begin) / aggregate_steps
+                left_time_s = speed * ((self.args.train_epochs - epoch) * train_steps - i)
+                if left_time_s <60: 
+                    left_time = f"{round(left_time_s,4)}s"
+                elif left_time_s<3600:
+                    left_time = f"{round(left_time_s/60,4)}mins"
+                else: left_time = f"{round(left_time_s/3600,4)}hs"
+    
+                pbar.set_postfix(
+                    {
+                        "Epoch": epoch + 1,
+                        "Iteration": f"{i+1}/{train_steps}",
+                        "Loss": loss.item(),
+                        "Speed": f"{round(speed, 4)}s/iter",
+                        "Left time": left_time
+                    }
+                )
+                # if (i + 1) % 100 == 0:
+                #     speed = (time.time() - time_now) / iter_count
+                #     left_time = speed * ((self.num_epochs - epoch) * train_steps - i)
+                #     print('\tspeed: {:.4f}s/iter; left time: {:.4f}s'.format(speed, left_time))
+                #     iter_count = 0
+                #     time_now = time.time()
 
                 # Minimax strategy
                 loss1.backward(retain_graph=True)
