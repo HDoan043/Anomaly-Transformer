@@ -241,7 +241,7 @@ class Solver(object):
                 torch.load(
                     os.path.join(str(self.model_save_path), '_checkpoint.pth')))            
         self.model.eval()
-        temperature = 50
+        temperature = self.temperature
 
         print("======================TEST MODE======================")
 
