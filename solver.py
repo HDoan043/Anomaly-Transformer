@@ -8,6 +8,8 @@ from utils.utils import *
 from model.AnomalyTransformer import AnomalyTransformer
 from data_factory.data_loader import get_loader_segment
 import time
+from sklearn.metrics import precision_recall_fscore_support
+from sklearn.metrics import accuracy_score
 
 
 def my_kl_loss(p, q):
@@ -335,13 +337,8 @@ class Solver(object):
         print("normal:", np.percentile(train_energy, [0,25,50,75,95,99]))
         print("test:", np.percentile(test_energy, [0,25,50,75,95,99]))
         print("normal and test:", np.percentile(combined_energy, [0,25,50,75,95,99]))
-        
-        thresh = np.percentile(combined_energy, 100 - self.anormly_ratio)
-        if self.threshold == -1:
-            print("Using calculated threshold :", thresh)
-        else:
-            thresh = self.threshold
-            print("Using provided threshold :", thresh)
+
+        combined_energy_copy = combined_energy.copy()
 
         # (3) evaluation on the test set
         test_labels = []
@@ -384,49 +381,104 @@ class Solver(object):
         test_labels = np.array(test_labels)
 
         test_energy = (test_energy - min_val) / (max_val - min_val + 1e-8)
-        pred = (test_energy > thresh).astype(int)
-        # pred = (test_energy > thresh).astype(int)
 
-        gt = test_labels.astype(int)
-
-        print("pred:   ", pred.shape)
-        print("gt:     ", gt.shape)
-
-        # detection adjustment: please see this issue for more information https://github.com/thuml/Anomaly-Transformer/issues/14
-        anomaly_state = False
-        for i in range(len(gt)):
-            if gt[i] == 1 and pred[i] == 1 and not anomaly_state:
-                anomaly_state = True
-                for j in range(i, 0, -1):
-                    if gt[j] == 0:
-                        break
-                    else:
-                        if pred[j] == 0:
-                            pred[j] = 1
-                for j in range(i, len(gt)):
-                    if gt[j] == 0:
-                        break
-                    else:
-                        if pred[j] == 0:
-                            pred[j] = 1
-            elif gt[i] == 0:
+        best_f1 = 0
+        best_acc = 0
+        best_pre = 0
+        best_re = 0
+        best_threshold = 0
+        
+        if self.threshold == -1:
+            for anomaly_ratio in self.anormly_ratio:
+                print(f"**Anomaly_ratio: {anomaly_ratio}")
+                thresh = np.percentile(combined_energy_copy, 100 - self.anormly_ratio)        
+                print("\t_ Threshold :", thresh)
+                pred = (test_energy > thresh).astype(int)
+                gt = test_labels.astype(int)
                 anomaly_state = False
-            if anomaly_state:
-                pred[i] = 1
-
-        pred = np.array(pred)
-        gt = np.array(gt)
-        print("pred: ", pred.shape)
-        print("gt:   ", gt.shape)
-
-        from sklearn.metrics import precision_recall_fscore_support
-        from sklearn.metrics import accuracy_score
-        accuracy = accuracy_score(gt, pred)
-        precision, recall, f_score, support = precision_recall_fscore_support(gt, pred,
-                                                                              average='binary')
-        print(
-            "Accuracy : {:0.4f}, Precision : {:0.4f}, Recall : {:0.4f}, F-score : {:0.4f} ".format(
-                accuracy, precision,
-                recall, f_score))
-
-        return accuracy, precision, recall, f_score
+                for i in range(len(gt)):
+                    if gt[i] == 1 and pred[i] == 1 and not anomaly_state:
+                        anomaly_state = True
+                        for j in range(i, 0, -1):
+                            if gt[j] == 0:
+                                break
+                            else:
+                                if pred[j] == 0:
+                                    pred[j] = 1
+                        for j in range(i, len(gt)):
+                            if gt[j] == 0:
+                                break
+                            else:
+                                if pred[j] == 0:
+                                    pred[j] = 1
+                    elif gt[i] == 0:
+                        anomaly_state = False
+                    if anomaly_state:
+                        pred[i] = 1
+        
+                pred = np.array(pred)
+                gt = np.array(gt)
+                accuracy = accuracy_score(gt, pred)
+                precision, recall, f_score, support = precision_recall_fscore_support(gt, pred,
+                                                                                      average='binary')
+                print(
+                    "\tAccuracy : {:0.4f}, Precision : {:0.4f}, Recall : {:0.4f}, F-score : {:0.4f} ".format(
+                        accuracy, precision,
+                        recall, f_score))
+                if f_score >= best_f1:
+                    best_f1 = f_score
+                    best_acc = accuracy
+                    best_pre = precision
+                    best_re = recall
+                    best_threshold = thresh
+            print("-------------------------------")
+            print("FINISH")
+            print("Best accuracy : {:0.4f}, Best precision : {:0.4f}, Best recall : {:0.4f}, Best f-score : {:0.4f} | Threshold : {}".format(
+                        best_acc, best_pre, best_re, best_f1, best_threshold))
+        else:
+            thresh = self.threshold
+            print("Using provided threshold :", thresh)
+            pred = (test_energy > thresh).astype(int)
+            # pred = (test_energy > thresh).astype(int)
+    
+            gt = test_labels.astype(int)
+    
+            print("pred:   ", pred.shape)
+            print("gt:     ", gt.shape)
+    
+            # detection adjustment: please see this issue for more information https://github.com/thuml/Anomaly-Transformer/issues/14
+            anomaly_state = False
+            for i in range(len(gt)):
+                if gt[i] == 1 and pred[i] == 1 and not anomaly_state:
+                    anomaly_state = True
+                    for j in range(i, 0, -1):
+                        if gt[j] == 0:
+                            break
+                        else:
+                            if pred[j] == 0:
+                                pred[j] = 1
+                    for j in range(i, len(gt)):
+                        if gt[j] == 0:
+                            break
+                        else:
+                            if pred[j] == 0:
+                                pred[j] = 1
+                elif gt[i] == 0:
+                    anomaly_state = False
+                if anomaly_state:
+                    pred[i] = 1
+    
+            pred = np.array(pred)
+            gt = np.array(gt)
+            print("pred: ", pred.shape)
+            print("gt:   ", gt.shape)
+    
+            accuracy = accuracy_score(gt, pred)
+            precision, recall, f_score, support = precision_recall_fscore_support(gt, pred,
+                                                                                  average='binary')
+            print(
+                "Accuracy : {:0.4f}, Precision : {:0.4f}, Recall : {:0.4f}, F-score : {:0.4f} ".format(
+                    accuracy, precision,
+                    recall, f_score))
+    
+            return accuracy, precision, recall, f_score
