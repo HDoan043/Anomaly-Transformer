@@ -235,13 +235,14 @@ class Solver(object):
 
     def test(self):
         try:
-            self.model.load_state_dict(
-                torch.load(
-                    os.path.join(str(self.model_save_path), str(self.dataset) + '_checkpoint.pth')))
+            checkpoints = os.path.join(str(self.model_save_path), str(self.dataset) + '_checkpoint.pth')
+            self.model.load_state_dict(torch.load(checkpoints))
         except:
-            self.model.load_state_dict(
-                torch.load(
-                    os.path.join(str(self.model_save_path), '_checkpoint.pth')))            
+            try:
+                backup_checkpoints = os.path.join(str(self.model_save_path), '_checkpoint.pth')
+                self.model.load_state_dict(torch.load(backup_checkpoints))            
+            except:
+                print("... Use model trained above ...")
         self.model.eval()
         temperature = self.temperature
 
