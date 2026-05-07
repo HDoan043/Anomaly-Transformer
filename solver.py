@@ -392,7 +392,7 @@ class Solver(object):
         if self.threshold == -1:
             for anomaly_ratio in self.anormly_ratio:
                 print(f"**Anomaly_ratio: {anomaly_ratio}")
-                thresh = np.percentile(combined_energy_copy, 100 - self.anormly_ratio)        
+                thresh = np.percentile(combined_energy_copy, 100 - anomaly_ratio)        
                 print("\t_ Threshold :", thresh)
                 pred = (test_energy > thresh).astype(int)
                 gt = test_labels.astype(int)
