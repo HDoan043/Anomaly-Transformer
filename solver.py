@@ -419,6 +419,7 @@ class Solver(object):
         
                 pred = np.array(pred)
                 gt = np.array(gt)
+                gt, pred = adjustment(gt, pred)
                 accuracy = accuracy_score(gt, pred)
                 precision, recall, f_score, support = precision_recall_fscore_support(gt, pred,
                                                                                       average='binary')
